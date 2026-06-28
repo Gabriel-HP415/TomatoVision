@@ -1,0 +1,42 @@
+# TomatoVision Docker Compose
+# Chạy hệ thống phân loại chất lượng cà chua với Docker
+
+version: '3.8'
+
+services:
+  tomato-vision:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tomato-vision-app
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist data across container restarts
+      - tomato_uploads:/app/uploads
+      - tomato_results:/app/results
+      - tomato_db:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DATABASE_PATH=/app/data/tomato_quality.db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - tomato-network
+
+volumes:
+  tomato_uploads:
+    driver: local
+  tomato_results:
+    driver: local
+  tomato_db:
+    driver: local
+
+networks:
+  tomato-network:
+    driver: bridge

@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống phân loại cà chua - Tomato Quality System</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #b7131a;
+            --primary-dark: #93000d;
+            --secondary: #006e1c;
+            --secondary-light: #98f994;
+            --background: #f4faff;
+            --surface: #ffffff;
+            --surface-variant: #d7e4ec;
+            --text-primary: #111d23;
+            --text-secondary: #5b403d;
+            --tertiary: #005ea4;
+            --error: #ba1a1a;
+            --success: #006e1c;
+            --warning: #f57c00;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Navbar */
+        .navbar {
+            background: var(--surface);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary) !important;
+        }
+        
+        /* Main Container */
+        .main-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Cards */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--surface-variant);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--surface-variant);
+            font-weight: 600;
+            padding: 16px 20px;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        /* Upload Zone */
+        .upload-zone {
+            border: 2px dashed var(--surface-variant);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--background);
+        }
+        
+        .upload-zone:hover {
+            border-color: var(--primary);
+            background: rgba(183, 19, 26, 0.05);
+        }
+        
+        .upload-zone.dragover {
+            border-color: var(--primary);
+            background: rgba(183, 19, 26, 0.1);
+        }
+        
+        /* Image Preview */
+        .image-preview {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: contain;
+            border-radius: 8px;
+            background: #f0f0f0;
+            display: none;
+        }
+        
+        .image-preview.visible {
+            display: block;
+        }
+        
+        /* Processing Steps */
+        .processing-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        
+        .step-item {
+            position: relative;
+            aspect-ratio: 1;
+            border: 1px solid var(--surface-variant);
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--background);
+            transition: transform 0.2s;
+        }
+        
+        .step-item:hover {
+            transform: scale(1.02);
+        }
+        
+        .step-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .step-label {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(38, 50, 56, 0.85);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        /* Results Panel */
+        .result-score {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(
+                var(--secondary) calc(var(--score) * 1%),
+                var(--surface-variant) calc(var(--score) * 1%)
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            position: relative;
+        }
+        
+        .score-circle::before {
+            content: '';
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            background: var(--surface);
+            border-radius: 50%;
+        }
+        
+        .score-value {
+            position: relative;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        /* Progress Bars */
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+        
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+            background: var(--surface-variant);
+        }
+        
+        .progress-bar {
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        /* Grade Badges */
+        .grade-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .grade-badge.grade-a {
+            background: var(--secondary);
+        }
+        
+        .grade-badge.grade-b {
+            background: var(--tertiary);
+        }
+        
+        .grade-badge.grade-c {
+            background: var(--error);
+        }
+        
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 28px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            background: var(--surface-variant);
+        }
+        .timeline-item {
+            position: relative;
+            padding-bottom: 16px;
+            padding-left: 12px;
+        }
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: -24px;
+            top: 4px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 0 2px var(--surface-variant);
+        }
+
+        /* Color Indicators */
+        .color-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: var(--background);
+        }
+        
+        .color-swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+        
+        /* Feature Grid */
+        .feature-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--surface-variant);
+        }
+        
+        .feature-item:last-child {
+            border-bottom: none;
+        }
+        
+        .feature-value {
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* History Table */
+        .table {
+            font-size: 14px;
+        }
+        
+        .table th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            border-bottom: 2px solid var(--surface-variant);
+        }
+        
+        .table td {
+            vertical-align: middle;
+        }
+        
+        .table-img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background: var(--secondary);
+            border-color: var(--secondary);
+        }
+        
+        .btn-secondary:hover {
+            background: #005313;
+            border-color: #005313;
+        }
+        
+        .btn-outline-secondary {
+            color: var(--secondary);
+            border-color: var(--secondary);
+        }
+        
+        .btn-outline-secondary:hover {
+            background: var(--secondary);
+            border-color: var(--secondary);
+        }
+        
+        /* Loading Spinner */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            flex-direction: column;
+        }
+        
+        .loading-overlay.visible {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--surface-variant);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Video/Webcam */
+        #webcam-video {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        /* Toast Notification */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        /* Stats Cards */
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--surface-variant);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 992px) {
+            .processing-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .processing-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .main-container {
+                padding: 10px;
+            }
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        /* Defect Alert */
+        .defect-alert {
+            background: rgba(186, 26, 26, 0.1);
+            border: 1px solid var(--error);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: var(--error);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .no-defect {
+            background: rgba(0, 110, 28, 0.1);
+            border: 1px solid var(--secondary);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Histogram Canvas */
+        .histogram-container {
+            background: var(--background);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .histogram-canvas {
+            width: 100%;
+            height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-grid-3x3-gap-fill text-danger"></i>
+                Tomato Quality System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="bi bi-house-door"></i> Trang chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#history"><i class="bi bi-clock-history"></i> Lịch sử</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#helpModal">
+                            <i class="bi bi-question-circle"></i> Hướng dẫn
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner mb-3"></div>
+        <div class="font-mono">Đang xử lý ảnh...</div>
+        <div class="text-muted mt-2" id="loadingStep">Tiền xử lý ảnh</div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-container">
+        <!-- Page Title -->
+        <div class="mb-4">
+            <h2 class="mb-1">Phân tích chất lượng cà chua</h2>
+            <p class="text-muted mb-0">Upload ảnh hoặc chụp từ webcam để phân tích độ chín và chất lượng</p>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="row g-4">
+            <!-- Left Column: Upload & Webcam -->
+            <div class="col-lg-3">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <i class="bi bi-cloud-upload me-2"></i>Nguồn dữ liệu
+                    </div>
+                    <div class="card-body">
+                        <!-- Tab Navigation -->
+                        <ul class="nav nav-pills mb-3" role="tablist">
+                            <li class="nav-item flex-fill" role="presentation">
+                                <button class="nav-link active w-100" id="upload-tab" data-bs-toggle="pill" data-bs-target="#upload-pane" type="button">
+                                    <i class="bi bi-upload me-1"></i>Upload
+                                </button>
+                            </li>
+                            <li class="nav-item flex-fill" role="presentation">
+                                <button class="nav-link w-100" id="webcam-tab" data-bs-toggle="pill" data-bs-target="#webcam-pane" type="button">
+                                    <i class="bi bi-camera me-1"></i>Webcam
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Tab Content -->
+                        <div class="tab-content">
+                            <!-- Upload Pane -->
+                            <div class="tab-pane fade show active" id="upload-pane">
+                                <div class="upload-zone" id="uploadZone">
+                                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                                    <i class="bi bi-cloud-arrow-up fs-1 text-muted mb-3"></i>
+                                    <p class="mb-1 fw-medium">Kéo thả ảnh vào đây</p>
+                                    <p class="text-muted small mb-2">hoặc nhấn để chọn file</p>
+                                    <p class="text-muted small">Hỗ trợ: JPG, PNG, JPEG</p>
+                                </div>
+                            </div>
+
+                            <!-- Webcam Pane -->
+                            <div class="tab-pane fade" id="webcam-pane">
+                                <video id="webcam-video" autoplay playsinline></video>
+                                <canvas id="webcam-canvas" style="display: none;"></canvas>
+                                <div class="d-grid gap-2 mt-2">
+                                    <button class="btn btn-outline-primary" id="startWebcam">
+                                        <i class="bi bi-play-circle me-1"></i>Bật Webcam
+                                    </button>
+                                    <button class="btn btn-outline-danger" id="stopWebcam" style="display: none;">
+                                        <i class="bi bi-stop-circle me-1"></i>Tắt Webcam
+                                    </button>
+                                    <button class="btn btn-primary" id="captureFrame" style="display: none;">
+                                        <i class="bi bi-camera me-1"></i>Chụp ảnh
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Image Preview -->
+                        <div class="mt-3">
+                            <img id="imagePreview" class="image-preview visible" alt="Preview">
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 mt-3">
+                            <button class="btn btn-secondary" id="analyzeBtn" disabled>
+                                <i class="bi bi-search me-1"></i>Phân tích
+                            </button>
+                            <button class="btn btn-outline-secondary" id="resetBtn" disabled>
+                                <i class="bi bi-arrow-repeat me-1"></i>Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Column: Processing Steps -->
+            <div class="col-lg-5">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <i class="bi bi-diagram-3 me-2"></i>Quá trình xử lý ảnh
+                        <span class="badge bg-secondary ms-2 font-mono" id="stepCount">0/9</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="processing-grid" id="processingGrid">
+                            <!-- Steps will be populated here -->
+                        </div>
+                        
+                        <!-- Empty State -->
+                        <div class="empty-state" id="emptyState">
+                            <i class="bi bi-image"></i>
+                            <p>Chưa có ảnh để xử lý</p>
+                            <p class="small">Upload ảnh hoặc chụp từ webcam để bắt đầu</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Results -->
+            <div class="col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <i class="bi bi-clipboard-data me-2"></i>Kết quả phân tích
+                    </div>
+                    <div class="card-body" id="resultsPanel">
+                        <!-- Results will be populated here -->
+                        <div class="empty-state">
+                            <i class="bi bi-clipboard"></i>
+                            <p>Chưa có kết quả</p>
+                            <p class="small">Phân tích ảnh để xem kết quả</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Row -->
+        <div class="row g-4 mt-3" id="statsRow" style="display: none;">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-value" id="statTotal">0</div>
+                    <div class="stat-label">Tổng phân tích</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-value text-success" id="statGradeA">0</div>
+                    <div class="stat-label">Loại A - Đạt</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-value text-primary" id="statGradeB">0</div>
+                    <div class="stat-label">Loại B - Chưa đạt</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-value text-danger" id="statGradeC">0</div>
+                    <div class="stat-label">Loại C - Không đạt</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Section -->
+        <section class="mt-5" id="history">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-clock-history me-2"></i>Lịch sử phân tích</span>
+                    <div class="d-flex gap-2">
+                        <select class="form-select form-select-sm" id="gradeFilter" style="width: auto;">
+                            <option value="">Tất cả</option>
+                            <option value="A">Loại A</option>
+                            <option value="B">Loại B</option>
+                            <option value="C">Loại C</option>
+                        </select>
+                        <button class="btn btn-sm btn-outline-danger" id="clearHistory">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Ảnh</th>
+                                    <th>Thời gian</th>
+                                    <th>Độ chín</th>
+                                    <th>Chất lượng</th>
+                                    <th>Loại</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTable">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        Chưa có lịch sử phân tích
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Help Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-question-circle me-2"></i>Hướng dẫn sử dụng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>Cách sử dụng:</h6>
+                    <ol class="mb-4">
+                        <li><strong>Upload ảnh:</strong> Nhấn nút "Upload" và chọn file ảnh hoặc kéo thả ảnh vào vùng upload.</li>
+                        <li><strong>Chụp từ webcam:</strong> Nhấn "Webcam", bật webcam và nhấn "Chụp ảnh".</li>
+                        <li>Nhấn <strong>"Phân tích"</strong> để bắt đầu xử lý.</li>
+                        <li>Xem kết quả phân tích với các thông số chi tiết.</li>
+                    </ol>
+                    
+                    <h6>Ý nghĩa các thông số:</h6>
+                    <ul>
+                        <li><strong>Độ chín (%):</strong> Tỷ lệ màu đỏ trên bề mặt cà chua</li>
+                        <li><strong>Chất lượng (0-100):</strong> Điểm tổng hợp dựa trên hình dạng và texture</li>
+                        <li><strong>Loại A:</strong> Cà chua chín đều, không có khuyết tật</li>
+                        <li><strong>Loại B:</strong> Cà chua chưa chín hoặc có khuyết điểm nhẹ</li>
+                        <li><strong>Loại C:</strong> Cà chua có khuyết tật hoặc chất lượng kém</li>
+                    </ul>
+                    
+                    <h6>Các bước xử lý ảnh:</h6>
+                    <ul class="small">
+                        <li>Chương 2: Tiền xử lý (Resize, Gaussian Blur, HSV Conversion)</li>
+                        <li>Chương 4: Phân vùng (HSV Threshold, Contour Detection, ROI Extraction)</li>
+                        <li>Chương 3: Trích xuất đặc trưng (Color Histogram, Shape, Texture LBP/GLCM)</li>
+                        <li>Chương 5: Phân loại (Rule-based Classification)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Detail Modal -->
+    <div class="modal fade" id="detailModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-search-heart text-primary"></i>
+                        Phân tích chi tiết mẫu cà chua
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="detailModalBody">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // ==================== STATE ====================
+        let currentAnalysisResult = null;
+        let currentImageData = null;
+        let webcamStream = null;
+        let isAnalyzing = false;
+
+        // API Base URL
+        const API_BASE = '/api';
+
+        // ==================== DOM ELEMENTS ====================
+        const fileInput = document.getElementById('fileInput');
+        const uploadZone = document.getElementById('uploadZone');
+        const imagePreview = document.getElementById('imagePreview');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingStep = document.getElementById('loadingStep');
+        const processingGrid = document.getElementById('processingGrid');
+        const emptyState = document.getElementById('emptyState');
+        const resultsPanel = document.getElementById('resultsPanel');
+        const stepCount = document.getElementById('stepCount');
+        const historyTable = document.getElementById('historyTable');
+        const statsRow = document.getElementById('statsRow');
+
+        // Webcam elements
+        const webcamVideo = document.getElementById('webcam-video');
+        const webcamCanvas = document.getElementById('webcam-canvas');
+        const startWebcamBtn = document.getElementById('startWebcam');
+        const stopWebcamBtn = document.getElementById('stopWebcam');
+        const captureFrameBtn = document.getElementById('captureFrame');
+
+        // ==================== UPLOAD HANDLING ====================
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showToast('Vui lòng chọn file ảnh', 'danger');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentImageData = e.target.result;
+                imagePreview.src = currentImageData;
+                imagePreview.classList.add('visible');
+                analyzeBtn.disabled = false;
+                resetBtn.disabled = false;
+                emptyState.style.display = 'none';
+                clearResults();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ==================== WEBCAM HANDLING ====================
+        startWebcamBtn.addEventListener('click', async () => {
+            try {
+                webcamStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                webcamVideo.srcObject = webcamStream;
+                webcamVideo.style.display = 'block';
+                startWebcamBtn.style.display = 'none';
+                stopWebcamBtn.style.display = 'block';
+                captureFrameBtn.style.display = 'block';
+            } catch (err) {
+                showToast('Không thể truy cập webcam: ' + err.message, 'danger');
+            }
+        });
+
+        stopWebcamBtn.addEventListener('click', () => {
+            if (webcamStream) {
+                webcamStream.getTracks().forEach(track => track.stop());
+                webcamStream = null;
+            }
+            webcamVideo.srcObject = null;
+            webcamVideo.style.display = 'none';
+            stopWebcamBtn.style.display = 'none';
+            startWebcamBtn.style.display = 'block';
+            captureFrameBtn.style.display = 'none';
+        });
+
+        captureFrameBtn.addEventListener('click', () => {
+            const ctx = webcamCanvas.getContext('2d');
+            webcamCanvas.width = webcamVideo.videoWidth;
+            webcamCanvas.height = webcamVideo.videoHeight;
+            ctx.drawImage(webcamVideo, 0, 0);
+            
+            currentImageData = webcamCanvas.toDataURL('image/jpeg');
+            imagePreview.src = currentImageData;
+            imagePreview.classList.add('visible');
+            analyzeBtn.disabled = false;
+            resetBtn.disabled = false;
+            emptyState.style.display = 'none';
+            clearResults();
+            
+            showToast('Đã chụp ảnh thành công', 'success');
+        });
+
+        // ==================== ANALYSIS ====================
+        analyzeBtn.addEventListener('click', analyzeImage);
+        resetBtn.addEventListener('click', resetAll);
+
+        async function analyzeImage() {
+            if (isAnalyzing || !currentImageData) return;
+            
+            isAnalyzing = true;
+            showLoading('Đang khởi tạo...');
+
+            try {
+                // Send to API
+                const formData = new FormData();
+                const blob = await fetch(currentImageData).then(r => r.blob());
+                formData.append('file', blob, 'image.jpg');
+
+                // Update loading step
+                updateLoadingStep('Đang tải ảnh lên...');
+
+                const response = await fetch(`${API_BASE}/analyze`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Phân tích thất bại');
+                }
+
+                updateLoadingStep('Đang xử lý kết quả...');
+                const result = await response.json();
+
+                currentAnalysisResult = result;
+                displayResults(result);
+                loadHistory();
+                loadStatistics();
+
+                showToast('Phân tích hoàn thành!', 'success');
+
+            } catch (err) {
+                console.error('Analysis error:', err);
+                showToast('Lỗi khi phân tích: ' + err.message, 'danger');
+            } finally {
+                hideLoading();
+                isAnalyzing = false;
+            }
+        }
+
+        function displayResults(result) {
+            const gradeClass = result.grade.toLowerCase();
+            const gradeIcon = {
+                'A': 'check-circle-fill',
+                'B': 'exclamation-circle-fill',
+                'C': 'x-circle-fill'
+            };
+
+            // Update processing grid
+            updateProcessingGrid(result);
+
+            // Build results HTML
+            resultsPanel.innerHTML = `
+                <!-- Quality Score -->
+                <div class="result-score mb-4">
+                    <div class="score-circle" style="--score: ${result.combined_score}">
+                        <span class="score-value">${Math.round(result.combined_score)}</span>
+                    </div>
+                    <div class="text-muted small">Điểm chất lượng</div>
+                </div>
+
+                <!-- Ripeness Progress -->
+                <div class="mb-3">
+                    <div class="progress-labels">
+                        <span>Độ chín</span>
+                        <span class="fw-bold">${result.ripeness_score.toFixed(1)}%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-danger" style="width: ${result.ripeness_score}%"></div>
+                    </div>
+                </div>
+
+                <!-- Color Ratios -->
+                <div class="mb-3">
+                    <p class="small fw-bold text-muted mb-2">Tỷ lệ màu sắc</p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <div class="color-indicator flex-fill">
+                            <span class="color-swatch" style="background: #D32F2F;"></span>
+                            <span>Đỏ</span>
+                            <span class="fw-bold">${result.red_ratio.toFixed(1)}%</span>
+                        </div>
+                        <div class="color-indicator flex-fill">
+                            <span class="color-swatch" style="background: #388E3C;"></span>
+                            <span>Xanh</span>
+                            <span class="fw-bold">${result.green_ratio.toFixed(1)}%</span>
+                        </div>
+                        <div class="color-indicator flex-fill">
+                            <span class="color-swatch" style="background: #FBC02D;"></span>
+                            <span>Vàng</span>
+                            <span class="fw-bold">${result.yellow_ratio.toFixed(1)}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shape Features -->
+                <div class="mb-3">
+                    <p class="small fw-bold text-muted mb-2">Đặc trưng hình dạng</p>
+                    <div class="feature-item">
+                        <span>Độ tròn (Circularity)</span>
+                        <span class="feature-value">${result.circularity?.toFixed(3) || 'N/A'}</span>
+                    </div>
+                    <div class="feature-item">
+                        <span>Solidity</span>
+                        <span class="feature-value">${result.solidity?.toFixed(3) || 'N/A'}</span>
+                    </div>
+                    <div class="feature-item">
+                        <span>Diện tích (px)</span>
+                        <span class="feature-value">${result.area?.toFixed(0) || 'N/A'}</span>
+                    </div>
+                </div>
+
+                <!-- Texture -->
+                <div class="mb-3">
+                    <p class="small fw-bold text-muted mb-2">Đặc trưng texture</p>
+                    <div class="feature-item">
+                        <span>LBP Entropy</span>
+                        <span class="feature-value">${result.lbp_entropy?.toFixed(3) || 'N/A'}</span>
+                    </div>
+                    <div class="feature-item">
+                        <span>GLCM Homogeneity</span>
+                        <span class="feature-value">${result.glcm_homogeneity?.toFixed(3) || 'N/A'}</span>
+                    </div>
+                </div>
+
+                <!-- Defect Status -->
+                <div class="mb-3">
+                    ${result.has_defects 
+                        ? `<div class="defect-alert">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <div>
+                                <strong>Phát hiện khuyết tật</strong>
+                                <div class="small">Tỷ lệ: ${result.defect_ratio.toFixed(1)}%</div>
+                            </div>
+                           </div>`
+                        : `<div class="no-defect">
+                            <i class="bi bi-check-circle"></i>
+                            <div>
+                                <strong>Không phát hiện khuyết tật</strong>
+                                <div class="small">Bề mặt đồng đều</div>
+                            </div>
+                           </div>`
+                    }
+                </div>
+
+                <!-- Final Grade -->
+                <div class="text-center p-3 bg-light rounded-3">
+                    <div class="grade-badge grade-${gradeClass} mb-2">${result.grade}</div>
+                    <p class="mb-0 fw-bold">${result.grade_full}</p>
+                    <p class="small text-muted mb-0">${result.description || ''}</p>
+                </div>
+            `;
+        }
+
+        function updateProcessingGrid(result) {
+            processingGrid.innerHTML = '';
+            
+            const steps = [
+                { name: 'Original', image: result.images?.original },
+                { name: 'Gaussian', image: result.images?.blurred },
+                { name: 'HSV Mask', image: result.images?.hsv_mask },
+                { name: 'Segmentation', image: result.images?.final_mask },
+                { name: 'ROI', image: result.images?.roi },
+                { name: 'Contour', image: result.images?.contour },
+                { name: 'Histogram', image: null },
+                { name: 'Features', image: null }
+            ];
+
+            steps.forEach((step, index) => {
+                const stepEl = document.createElement('div');
+                stepEl.className = 'step-item';
+                stepEl.innerHTML = `
+                    ${step.image 
+                        ? `<img src="data:image/jpeg;base64,${step.image}" alt="${step.name}">` 
+                        : `<div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                            <i class="bi bi-image fs-3"></i>
+                           </div>`
+                    }
+                    <span class="step-label">${step.name}</span>
+                `;
+                processingGrid.appendChild(stepEl);
+            });
+
+            stepCount.textContent = `${steps.length}/${steps.length}`;
+        }
+
+        function clearResults() {
+            currentAnalysisResult = null;
+            processingGrid.innerHTML = '';
+            stepCount.textContent = '0/0';
+            resultsPanel.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-clipboard"></i>
+                    <p>Chưa có kết quả</p>
+                    <p class="small">Phân tích ảnh để xem kết quả</p>
+                </div>
+            `;
+        }
+
+        function resetAll() {
+            // Stop webcam
+            if (webcamStream) {
+                stopWebcamBtn.click();
+            }
+
+            // Clear image
+            currentImageData = null;
+            imagePreview.src = '';
+            imagePreview.classList.remove('visible');
+            fileInput.value = '';
+            
+            // Disable buttons
+            analyzeBtn.disabled = true;
+            resetBtn.disabled = true;
+
+            // Clear results
+            clearResults();
+            
+            // Show empty state
+            emptyState.style.display = 'block';
+        }
+
+        // ==================== HISTORY ====================
+        async function loadHistory(gradeFilter = '') {
+            try {
+                const url = gradeFilter 
+                    ? `${API_BASE}/history?grade=${gradeFilter}` 
+                    : `${API_BASE}/history`;
+                
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.items && data.items.length > 0) {
+                    historyTable.innerHTML = data.items.map(item => `
+                        <tr>
+                            <td class="font-mono">#${item.id}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="table-img bg-light d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-image text-muted"></i>
+                                    </div>
+                                    <span class="small">${item.image_name}</span>
+                                </div>
+                            </td>
+                            <td class="small">${new Date(item.analysis_date).toLocaleString('vi-VN')}</td>
+                            <td><span class="badge bg-danger">${item.ripeness_score.toFixed(1)}%</span></td>
+                            <td class="font-mono fw-bold">${item.quality_score.toFixed(1)}</td>
+                            <td>
+                                <span class="badge bg-${item.grade === 'A' ? 'success' : item.grade === 'B' ? 'primary' : 'danger'}">
+                                    ${item.grade}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="viewHistoryDetail(${item.id})">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    historyTable.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                Chưa có lịch sử phân tích
+                            </td>
+                        </tr>
+                    `;
+                }
+            } catch (err) {
+                console.error('Load history error:', err);
+            }
+        }
+
+        async function viewHistoryDetail(id) {
+            try {
+                const response = await fetch(`${API_BASE}/history/${id}`);
+                if (!response.ok) throw new Error('Not found');
+                const record = await response.json();
+
+                const imgUrl = record.image_path ? `/results/${record.image_path}` : '';
+                const preUrl = record.preprocessed_path ? `/results/${record.preprocessed_path}` : '';
+                const segUrl = record.segmented_path ? `/results/${record.segmented_path}` : '';
+                const featUrl = record.features_path ? `/results/${record.features_path}` : '';
+
+                showDetailModal({
+                    id: record.id,
+                    filename: record.image_name,
+                    created_at: record.analysis_date,
+                    quality_score: record.quality_score || 0,
+                    grade: record.grade || 'N/A',
+                    classification: record.ripeness_label || 'Chưa phân loại',
+                    image_url: imgUrl,
+                    preprocessed_url: preUrl,
+                    segmented_url: segUrl,
+                    features_url: featUrl,
+                    features: record.features || {}
+                });
+            } catch (err) {
+                showToast('Không thể tải chi tiết: ' + err.message, 'danger');
+            }
+        }
+
+        async function loadStatistics() {
+            try {
+                const response = await fetch(`${API_BASE}/statistics`);
+                const stats = await response.json();
+
+                statsRow.style.display = 'flex';
+                document.getElementById('statTotal').textContent = stats.total_analyses || 0;
+                document.getElementById('statGradeA').textContent = stats.grade_distribution?.A || 0;
+                document.getElementById('statGradeB').textContent = stats.grade_distribution?.B || 0;
+                document.getElementById('statGradeC').textContent = stats.grade_distribution?.C || 0;
+            } catch (err) {
+                console.error('Load statistics error:', err);
+            }
+        }
+
+        document.getElementById('gradeFilter').addEventListener('change', (e) => {
+            loadHistory(e.target.value);
+        });
+
+        document.getElementById('clearHistory').addEventListener('click', async () => {
+            if (!confirm('Bạn có chắc muốn xóa toàn bộ lịch sử?')) return;
+            
+            try {
+                await fetch(`${API_BASE}/history`, { method: 'DELETE' });
+                loadHistory();
+                loadStatistics();
+                showToast('Đã xóa lịch sử', 'success');
+            } catch (err) {
+                showToast('Lỗi khi xóa lịch sử', 'danger');
+            }
+        });
+
+        // ==================== LOADING ====================
+        function showLoading(message = 'Đang xử lý...') {
+            loadingStep.textContent = message;
+            loadingOverlay.classList.add('visible');
+        }
+
+        function updateLoadingStep(message) {
+            loadingStep.textContent = message;
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.remove('visible');
+        }
+
+        // ==================== DETAIL ANALYSIS MODAL ====================
+        function showDetailModal(record) {
+            const modal = new bootstrap.Modal(document.getElementById('detailModal'));
+            const score = record.quality_score || 0;
+            const grade = record.grade || 'N/A';
+            const gradeClass = grade.toLowerCase().replace('+', '').replace('-', '');
+
+            document.getElementById('detailModalBody').innerHTML = `
+                <div class="row g-3">
+                    <div class="col-lg-8">
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <span class="badge bg-light text-dark border font-mono">
+                                <i class="bi bi-hash"></i> ${record.id || 'BCH-0000'}
+                            </span>
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle font-mono">
+                                <i class="bi bi-clock"></i> ${new Date(record.created_at || Date.now()).toLocaleString('vi-VN')}
+                            </span>
+                            <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle font-mono">
+                                <i class="bi bi-image"></i> ${record.filename || 'image.jpg'}
+                            </span>
+                        </div>
+
+                        <div class="processing-grid mb-3">
+                            <div class="step-item">
+                                <span class="step-label">Ảnh gốc</span>
+                                <img src="${record.image_url || ''}" alt="Original">
+                            </div>
+                            <div class="step-item">
+                                <span class="step-label">Tiền xử lý</span>
+                                <img src="${record.preprocessed_url || ''}" alt="Preprocessed">
+                            </div>
+                            <div class="step-item">
+                                <span class="step-label">Phân vùng</span>
+                                <img src="${record.segmented_url || ''}" alt="Segmented">
+                            </div>
+                            <div class="step-item">
+                                <span class="step-label">Đặc trưng</span>
+                                <img src="${record.features_url || ''}" alt="Features">
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold mb-3"><i class="bi bi-list-check text-primary"></i> Quy trình xử lý</h6>
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <div class="timeline-dot bg-primary"></div>
+                                <div>
+                                    <div class="fw-semibold">Chương 2: Tiền xử lý ảnh</div>
+                                    <small class="text-muted">Resize, lọc nhiễu Gaussian, cân bằng histogram</small>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot bg-info"></div>
+                                <div>
+                                    <div class="fw-semibold">Chương 3: Trích xuất đặc trưng</div>
+                                    <small class="text-muted">Color histogram (HSV), texture (LBP), shape (Hu Moments)</small>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot bg-warning"></div>
+                                <div>
+                                    <div class="fw-semibold">Chương 4: Phân vùng ảnh</div>
+                                    <small class="text-muted">K-means clustering trên không gian màu</small>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot bg-success"></div>
+                                <div>
+                                    <div class="fw-semibold">Chương 5: Phân loại chất lượng</div>
+                                    <small class="text-muted">SVM/Random Forest trên vector đặc trưng</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm mb-3">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-3">Điểm chất lượng</h6>
+                                <div class="score-circle" style="--score: ${score}">
+                                    <span class="score-value">${score.toFixed(0)}</span>
+                                </div>
+                                <div class="grade-badge grade-${gradeClass} mx-auto">${grade}</div>
+                                <div class="mt-3">
+                                    <span class="badge bg-success-subtle text-success">
+                                        ${record.classification || 'Chưa phân loại'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3"><i class="bi bi-bar-chart"></i> Đặc trưng chính</h6>
+                                ${record.features ? renderFeatures(record.features) : '<p class="text-muted small">Không có dữ liệu</p>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            modal.show();
+        }
+
+        function renderFeatures(features) {
+            const items = [];
+            for (const [key, value] of Object.entries(features).slice(0, 8)) {
+                const numVal = typeof value === 'number' ? value : 0;
+                const percent = Math.min(100, Math.abs(numVal) * 100);
+                items.push(`
+                    <div class="mb-2">
+                        <div class="progress-labels">
+                            <span class="text-muted small">${key}</span>
+                            <span class="font-mono small">${numVal.toFixed(3)}</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-primary" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                `);
+            }
+            return items.join('');
+        }
+
+        // ==================== TOAST ====================
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type} border-0`;
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            
+            const container = document.getElementById('toastContainer');
+            container.appendChild(toast);
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            toast.addEventListener('hidden.bs.toast', () => toast.remove());
+        }
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            loadHistory();
+            loadStatistics();
+        });
+    </script>
+</body>
+</html>
